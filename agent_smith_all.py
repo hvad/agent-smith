@@ -7,6 +7,7 @@
 
 import sys
 import os
+import fcntl
 import time
 import configparser
 import argparse
@@ -105,6 +106,23 @@ class LoadAverageCheck:
             status = "WARNING"
         return f"Load : {status} 1 min={load_average[0]}, 5 min={load_average[1]}, 15 min={load_average[2]}"
 
+#class LoadAverageCheck:
+#    """ Check load_average for 1, 5 and 15 minutes."""
+#
+#    def __init__(self, config):
+#        self.warning_threshold = config.getfloat('Setting', 'load_average_warning_threshold')
+#        self.critical_threshold = config.getfloat('Setting', 'load_average_critical_threshold')
+#
+#    def run(self):
+#        load_average = psutil.getloadavg()
+#        load_info = f"Load Average: 1 min={load_average[0]}, 5 min={load_average[1]}, 15 min={load_average[2]}"
+#        if load_average[0] >= self.critical_threshold or load_average[1] >= self.critical_threshold or load_average[2] >= self.critical_threshold:
+#            load_info += " - CRITICAL"
+#        elif load_average[0] >= self.warning_threshold or load_average[1] >= self.warning_threshold or load_average[2] >= self.warning_threshold:
+#            load_info += " - WARNING"
+#        return load_info
+
+
 class AgentSmithLogger:
     """ Log Class for checks."""
 
@@ -137,6 +155,7 @@ class AgentSmithEngine:
                                              fallback=None)
         self.email_alert = SMTPAlert(self.config)
         self.alerts_config = self.config['Alerts']
+        self.lock_file_path = self.config.get('Setting', 'lock_file_path')
 
     def add_check(self, check_class):
         check_name = check_class.__name__.lower()
@@ -166,7 +185,16 @@ class AgentSmithEngine:
 
             time.sleep(int(self.config['Setting']['check_period']))
 
+    def acquire_lock(self):
+        try:
+            self.lock_file = open(self.lock_file_path, 'w')
+            fcntl.flock(self.lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Try to acquire an exclusive non-blocking lock
+        except IOError:
+            print("Another instance of Agent Smith is already running. Exiting.")
+            sys.exit(1)
+
     def run_as_daemon(self):
+        self.acquire_lock()
         try:
             pid = os.fork()
             if pid > 0:
@@ -215,6 +243,15 @@ class AgentSmithEngine:
                 return check_class
         return None
 
+    def run_as_single_process(self):
+        self.acquire_lock()  # Acquire the lock before running the process
+        try:
+            self.run_checks()
+        finally:
+            self.lock_file.close()
+            os.remove(self.lock_file_path)  # Remove the lock file when the process finishes
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Agent Smith Daemon")
@@ -242,6 +279,6 @@ if __name__ == "__main__":
         agent.run_as_daemon()
     else:
         print("Agent Smith started...")
-        agent.run_checks()
+        agent.run_as_single_process()
 
     agent.remove_pid_file()
