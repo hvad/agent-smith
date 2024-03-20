@@ -143,7 +143,7 @@ class AgentSmithLogger:
 class AgentSmithEngine:
     """ Agent Smith Engine class."""
 
-    def __init__(self, config_file):
+    def __init__(self, config_file=None):
         self.checks = []
         self.disabled_checks = []
         self.config = configparser.ConfigParser()
@@ -251,6 +251,9 @@ class AgentSmithEngine:
             self.lock_file.close()
             os.remove(self.lock_file_path)  # Remove the lock file when the process finishes
 
+    def write_discovery_file(self):
+            # Code to write the discovery file goes here
+            pass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -261,12 +264,23 @@ if __name__ == "__main__":
                         help="Daemonize the process")
     parser.add_argument("-c",
                         "--config",
-                        required=True,
                         default="agent_smith.ini",
                         help="Path to the configuration file")
+     parser.add_argument("-i",
+                        "--write-discovery-file",
+                        action="store_true",
+                        help="Write the discovery file and exit")
     args = parser.parse_args()
 
-    agent = AgentSmithEngine(args.config)
+    agent = AgentSmithEngine(args.config if not args.write_discovery_file else None)
+
+    if args.write_discovery_file:
+        agent.write_discovery_file()
+        sys.exit(0)
+
+    if args.config is None:
+        print("Error: Configuration file is required.")
+        sys.exit(1)
 
     checks = [
         DiskUsageCheck, LoadAverageCheck, MemoryUsageCheck
