@@ -106,28 +106,54 @@ class LoadAverageCheck:
             status = "WARNING"
         return f"Load : {status} 1 min={load_average[0]}, 5 min={load_average[1]}, 15 min={load_average[2]}"
 
-#class LoadAverageCheck:
-#    """ Check load_average for 1, 5 and 15 minutes."""
+#class AgentSmithLogger:
+#    """ Log Class for checks."""
 #
-#    def __init__(self, config):
-#        self.warning_threshold = config.getfloat('Setting', 'load_average_warning_threshold')
-#        self.critical_threshold = config.getfloat('Setting', 'load_average_critical_threshold')
+#    def __init__(self, log_file):
+#        self.log_file = log_file
+#        self.logger = logging.getLogger(__name__)
+#        self.logger.setLevel(logging.INFO)
+#        formatter = logging.Formatter(
+#            '%(asctime)s - %(hostname)s - %(message)s')
+#        file_handler = logging.FileHandler(log_file)
+#        file_handler.setFormatter(formatter)
+#        self.logger.addHandler(file_handler)
 #
-#    def run(self):
-#        load_average = psutil.getloadavg()
-#        load_info = f"Load Average: 1 min={load_average[0]}, 5 min={load_average[1]}, 15 min={load_average[2]}"
-#        if load_average[0] >= self.critical_threshold or load_average[1] >= self.critical_threshold or load_average[2] >= self.critical_threshold:
-#            load_info += " - CRITICAL"
-#        elif load_average[0] >= self.warning_threshold or load_average[1] >= self.warning_threshold or load_average[2] >= self.warning_threshold:
-#            load_info += " - WARNING"
-#        return load_info
+#    def log_result(self, result):
+#        hostname = socket.gethostname()
+#        self.logger.info(result, extra={'hostname': hostname})
 
+
+#class AgentSmithLogger:
+#    """ Log Class for checks."""
+#
+#    def __init__(self, log_file, config):
+#        self.log_file = log_file
+#        self.config = config
+#        self.logger = logging.getLogger(__name__)
+#        self.logger.setLevel(logging.INFO)
+#        formatter = logging.Formatter(
+#            '%(asctime)s - %(hostname)s - %(message)s')
+#        file_handler = logging.FileHandler(log_file)
+#        file_handler.setFormatter(formatter)
+#        self.logger.addHandler(file_handler)
+#
+#    def get_hostname_from_config(self):
+#        config = configparser.ConfigParser()
+#        config.read(self.config_file)
+#        hostname = config.get('Settings', 'hostname')
+#        return hostname
+#
+#    def log_result(self, result):
+#        hostname = self.get_hostname_from_config()
+#        self.logger.info(result, extra={'hostname': hostname})
 
 class AgentSmithLogger:
     """ Log Class for checks."""
 
-    def __init__(self, log_file):
+    def __init__(self, log_file, config_file):
         self.log_file = log_file
+        self.config_file = config_file
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter(
@@ -136,20 +162,29 @@ class AgentSmithLogger:
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
 
+    def get_hostname_from_config(self):
+        config = configparser.ConfigParser()
+        config.read(self.config_file)
+        hostname = config.get('Setting', 'hostname')
+        return hostname
+
     def log_result(self, result):
-        hostname = socket.gethostname()
+        hostname = self.get_hostname_from_config()
         self.logger.info(result, extra={'hostname': hostname})
+
 
 class AgentSmithEngine:
     """ Agent Smith Engine class."""
 
-    def __init__(self, config_file=None):
+    def __init__(self, config_file):
         self.checks = []
         self.disabled_checks = []
         self.config = configparser.ConfigParser()
         self.config.read(config_file)
         self.log_file_path = self.config.get('Setting', 'log_file_path')
-        self.result_logger = AgentSmithLogger(self.log_file_path)
+        self.config_file_path = config_file
+#        self.result_logger = AgentSmithLogger(self.log_file_path)
+        self.result_logger = AgentSmithLogger(self.log_file_path, self.config_file_path) 
         self.pid_file_path = self.config.get('Setting',
                                              'pid_file_path',
                                              fallback=None)
@@ -266,17 +301,9 @@ if __name__ == "__main__":
                         "--config",
                         default="agent_smith.ini",
                         help="Path to the configuration file")
-     parser.add_argument("-i",
-                        "--write-discovery-file",
-                        action="store_true",
-                        help="Write the discovery file and exit")
     args = parser.parse_args()
 
-    agent = AgentSmithEngine(args.config if not args.write_discovery_file else None)
-
-    if args.write_discovery_file:
-        agent.write_discovery_file()
-        sys.exit(0)
+    agent = AgentSmithEngine(args.config)
 
     if args.config is None:
         print("Error: Configuration file is required.")
