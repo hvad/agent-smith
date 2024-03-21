@@ -106,48 +106,6 @@ class LoadAverageCheck:
             status = "WARNING"
         return f"Load : {status} 1 min={load_average[0]}, 5 min={load_average[1]}, 15 min={load_average[2]}"
 
-#class AgentSmithLogger:
-#    """ Log Class for checks."""
-#
-#    def __init__(self, log_file):
-#        self.log_file = log_file
-#        self.logger = logging.getLogger(__name__)
-#        self.logger.setLevel(logging.INFO)
-#        formatter = logging.Formatter(
-#            '%(asctime)s - %(hostname)s - %(message)s')
-#        file_handler = logging.FileHandler(log_file)
-#        file_handler.setFormatter(formatter)
-#        self.logger.addHandler(file_handler)
-#
-#    def log_result(self, result):
-#        hostname = socket.gethostname()
-#        self.logger.info(result, extra={'hostname': hostname})
-
-
-#class AgentSmithLogger:
-#    """ Log Class for checks."""
-#
-#    def __init__(self, log_file, config):
-#        self.log_file = log_file
-#        self.config = config
-#        self.logger = logging.getLogger(__name__)
-#        self.logger.setLevel(logging.INFO)
-#        formatter = logging.Formatter(
-#            '%(asctime)s - %(hostname)s - %(message)s')
-#        file_handler = logging.FileHandler(log_file)
-#        file_handler.setFormatter(formatter)
-#        self.logger.addHandler(file_handler)
-#
-#    def get_hostname_from_config(self):
-#        config = configparser.ConfigParser()
-#        config.read(self.config_file)
-#        hostname = config.get('Settings', 'hostname')
-#        return hostname
-#
-#    def log_result(self, result):
-#        hostname = self.get_hostname_from_config()
-#        self.logger.info(result, extra={'hostname': hostname})
-
 class AgentSmithLogger:
     """ Log Class for checks."""
 
@@ -183,7 +141,6 @@ class AgentSmithEngine:
         self.config.read(config_file)
         self.log_file_path = self.config.get('Setting', 'log_file_path')
         self.config_file_path = config_file
-#        self.result_logger = AgentSmithLogger(self.log_file_path)
         self.result_logger = AgentSmithLogger(self.log_file_path, self.config_file_path) 
         self.pid_file_path = self.config.get('Setting',
                                              'pid_file_path',
