@@ -21,6 +21,7 @@ from email.message import EmailMessage
 import configparser
 import ntplib
 import psutil
+import schedule
 
 
 class SMTPAlert:
@@ -373,16 +374,26 @@ class AgentSmithEngine:
             self.disabled_checks.append(check_class(self.config))
 
     def run_checks(self, print_output=False):
-        while True:
-            for check in self.checks:
-                if check in self.disabled_checks:
-                    continue
-                result = check.run()
-                self.result_logger.log_result(result)
-                if print_output:
-                    print(f"Output result: {result}")
+
+        def run_check_and_log(check):
+            if check in self.disabled_checks:
+                return
+            result = check.run()
+            self.result_logger.log_result(result)
+            if print_output:
+                print(f"Output result: {result}")
+            if hasattr(
+                    self, 'enable_maintenance'
+            ) and self.enable_maintenance and not self.is_maintenance_time():
                 self._handle_alerts(check, result)
-            time.sleep(int(self.config['Setting']['period']))
+
+        for check in self.checks:
+            schedule.every(int(self.config['Setting']['period'])).seconds.do(
+                run_check_and_log, check)
+
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
 
     def _handle_alerts(self, check, result):
         check_name = check.__class__.__name__.lower()
@@ -512,8 +523,10 @@ if __name__ == "__main__":
     else:
 
         validator = ConfigValidator(args.config)
-        validator.validate_setting('Setting', 'pid_file_path', 'agent-smith.pid')
-        validator.validate_setting('Setting', 'lock_file_path', 'agent-smith.lock')
+        validator.validate_setting('Setting', 'pid_file_path',
+                                   'agent-smith.pid')
+        validator.validate_setting('Setting', 'lock_file_path',
+                                   'agent-smith.lock')
 
         agent = AgentSmithEngine(args.config)
 
