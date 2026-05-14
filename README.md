@@ -2,49 +2,83 @@
 
 ## Description
 
-Simple python monitoring tool.
+**Agent Smith** is a lightweight, asynchronous monitoring tool written in Python 3.10+. 
+It is designed to monitor system health metrics and network connectivity, providing real-time 
+logging and email alerts when thresholds are exceeded.
+
+## Key Features
+
+* **Load Average Monitoring**: Tracks CPU load for 1, 5, and 15-minute intervals.
+* **Memory Usage**: Monitors RAM utilization percentages.
+* **Disk Health**: Checks free space and usage across multiple configurable mount points.
+* **NTP Drift Detection**: Ensures system time synchronization by checking against NTP pool servers.
+* **TCP Port Checks**: Verifies if specific network ports are reachable.
+* **Asynchronous Engine**: Built with `asyncio` for non-blocking concurrent checks.
+* **Alerting System**: Integrated SMTP support for sending critical and warning email notifications.
 
 ## Installation
 
-Git clone project :
-```
-$ git clone https://github.com/hvad/agent-smith.git 
-```
-
-In a python 3.10 virtual environnement install requirements :
+1. **Clone the repository**:
+```bash
+$ git clone https://github.com/hvad/agent-smith.git
+$ cd agent-smith
 
 ```
+
+2. **Set up a virtual environment** (Python 3.10 recommended):
+```bash
+$ python3 -m venv venv
+$ source venv/bin/activate
+
+```
+
+3. **Install dependencies**:
+```bash
 $ pip install -r requirements.txt
+
 ```
 
 ## Usage
 
-Create configuration file :
+### 1. Generate Configuration
 
-```
+Generate a default `agent-smith.ini` file to customize your thresholds and email settings:
+
+```bash
 $ python agent-smith.py -c agent-smith.ini -g
+
 ```
 
-Execute script like below in daemon mode : 
+### 2. Configure the Agent
+
+Edit the generated `agent-smith.ini`. Ensure you set the following essential fields:
+
+* **[Email]**: SMTP server details and recipient addresses for alerts.
+* **[System]**: Specific disks to monitor and your desired warning/critical thresholds.
+* **[Setting]**: Enable or disable specific check modules.
+
+### 3. Run the Agent
+
+**Foreground Mode (for testing):**
+
+```bash
+$ python agent-smith.py -c agent-smith.ini
+
 ```
+
+**Daemon Mode (for production):**
+
+```bash
 $ python agent-smith.py -d -c agent-smith.ini
+
 ```
 
-Execute command like below to have help :
-```
-$ python agent-smith.py -h
-usage: agent-smith.py [-h] [-d] -c CONFIG [-g]
+## CLI Options
 
-Agent Smith Daemon
+| Option | Description |
+| --- | --- |
+| `-h, --help` | Show the help message and exit. |
+| `-d, --daemonize` | Run the process as a background daemon. |
+| `-c, --config` | **Required.** Path to your configuration file. |
+| `-g, --generate-config` | Generate a default configuration file at the specified path. |
 
-options:
-  -h, --help            show this help message and exit
-  -d, --daemonize       Daemonize the process
-  -c CONFIG, --config CONFIG
-                        Path to the configuration file
-  -g, --generate_config
-                        Generate configuration file
-                                                     
-```
-
-## Authors and acknowledgment
