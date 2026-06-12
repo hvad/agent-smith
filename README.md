@@ -40,16 +40,7 @@ $ pip install -r requirements.txt
 
 ## Usage
 
-### 1. Generate Configuration
-
-Generate a default `agent-smith.ini` file to customize your thresholds and email settings:
-
-```bash
-$ python agent-smith.py -c agent-smith.ini -g
-
-```
-
-### 2. Configure the Agent
+### 1. Configure the Agent
 
 Edit the generated `agent-smith.ini`. Ensure you set the following essential fields:
 
@@ -57,7 +48,7 @@ Edit the generated `agent-smith.ini`. Ensure you set the following essential fie
 * **[System]**: Specific disks to monitor and your desired warning/critical thresholds.
 * **[Setting]**: Enable or disable specific check modules.
 
-### 3. Run the Agent
+### 2. Run the Agent
 
 **Foreground Mode (for testing):**
 
@@ -80,5 +71,4 @@ $ python agent-smith.py -d -c agent-smith.ini
 | `-h, --help` | Show the help message and exit. |
 | `-d, --daemonize` | Run the process as a background daemon. |
 | `-c, --config` | **Required.** Path to your configuration file. |
-| `-g, --generate-config` | Generate a default configuration file at the specified path. |
 
